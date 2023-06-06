@@ -2,8 +2,9 @@ from typing import List
 
 from scyjava import get_version, is_version_at_least, jimport
 
-from napari_imagej import settings
-from napari_imagej.java import minimum_versions
+from napari_imagej import __version__, settings
+from napari_imagej.java import _validate_imagej, minimum_versions
+from napari_imagej.utilities.logging import logger
 
 version_checks = {
     "io.scif:scifio": "io.scif.SCIFIO",
@@ -57,3 +58,33 @@ def test_endpoint(ij):
                 version = gav[2]
                 exp_version = get_version(jimport(version_checks[ga]))
                 assert is_version_at_least(version, exp_version)
+
+
+def test_recommended_version(ij):
+    # Save old recommended versions
+    import napari_imagej.java
+
+    existing = napari_imagej.java.recommended_versions
+    napari_imagej.java.recommended_versions = {"org.scijava:scijava-common": "999.0.0"}
+
+    # Setup log handler to capture warning
+    import io
+    import logging
+
+    log_capture_string = io.StringIO()
+    ch = logging.StreamHandler(log_capture_string)
+    ch.setLevel(logging.WARN)
+    logger().addHandler(ch)
+    # Validate ImageJ - capture lower-than-recommended version
+    _validate_imagej()
+    log_contents = log_capture_string.getvalue()
+    log_capture_string.close()
+    # Assert warning given
+    assert log_contents == (
+        f"napari-imagej: napari-imagej v{__version__} recommends using the "
+        "following component versions:\n\torg.scijava:scijava-common : "
+        "999.0.0 (Installed: 2.94.1)\n"
+    )
+
+    # restore recommended versions
+    napari_imagej.java.recommended_versions = existing
