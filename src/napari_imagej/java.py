@@ -36,6 +36,9 @@ minimum_versions = {
 
 recommended_versions = {
     "net.imagej:imagej": "2.10.0",
+    "net.imagej:imagej-legacy": "1.2.1",
+    "net.imagej:imagej-ops": "2.0.1",
+    "org.scijava:scijava-search": "2.0.4",
     "sc.fiji:fiji": "2.10.0",
 }
 
