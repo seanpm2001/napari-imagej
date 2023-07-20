@@ -11,7 +11,7 @@ Notable fields included in the module:
     * jc
         - object whose fields are lazily-loaded Java Class instances.
 """
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 
 import imagej
 from jpype import JClass
@@ -39,6 +39,7 @@ recommended_versions = {}
 # -- ImageJ API -- #
 
 _ij = None
+_init_warnings: List[str] = []
 
 
 def ij():
@@ -47,6 +48,14 @@ def ij():
             "The ImageJ instance has not yet been initialized! Please run init_ij()"
         )
     return _ij
+
+
+def init_warnings():
+    if _ij is None:
+        raise Exception(
+            "The ImageJ instance has not yet been initialized! Please run init_ij()"
+        )
+    return _init_warnings
 
 
 def init_ij() -> "jc.ImageJ":
@@ -174,6 +183,7 @@ def _validate_imagej():
         )
         violations.insert(0, failure_str)
         failure_str = "\n\t".join(violations)
+        _init_warnings.append(failure_str)
         warn(failure_str)
 
 
