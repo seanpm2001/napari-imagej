@@ -34,7 +34,10 @@ minimum_versions = {
     "sc.fiji:TrackMate": "7.11.0",
 }
 
-recommended_versions = {}
+recommended_versions = {
+    "net.imagej:imagej": "2.10.0",
+    "sc.fiji:fiji": "2.10.0",
+}
 
 # -- ImageJ API -- #
 
@@ -130,11 +133,13 @@ def _validate_imagej():
     # If we want to require a minimum version for a java component, we need to
     # be able to find our current version. We do that by querying a Java class
     # within that component.
+    ImageJ = jimport("net.imagej.Main")
     RGRAI = jimport("net.imglib2.python.ReferenceGuardingRandomAccessibleInterval")
     SCIFIO = jimport("io.scif.SCIFIO")
     UnsafeImg = jimport("net.imglib2.img.unsafe.UnsafeImg")
     component_requirements = {
         "io.scif:scifio": SCIFIO,
+        "net.imagej:imagej": ImageJ,
         "net.imagej:imagej-common": jc.Dataset,
         "net.imagej:imagej-ops": jc.OpInfo,
         "net.imglib2:imglib2-unsafe": UnsafeImg,
@@ -146,6 +151,8 @@ def _validate_imagej():
     # Find version that violate the minimum
     violations = []
     for component, cls in component_requirements.items():
+        if component not in minimum_versions:
+            continue
         min_version = minimum_versions[component]
         component_version = get_version(cls)
         if not is_version_at_least(component_version, min_version):
@@ -193,10 +200,15 @@ def _optional_requirements():
     if _ij.legacy and _ij.legacy.isActive():
         optionals["net.imagej:imagej-legacy"] = _ij.legacy.getClass()
     # Add additional minimum versions for fiji components
-    try:
-        optionals["sc.fiji:TrackMate"] = jimport("fiji.plugin.trackmate.TrackMate")
-    except Exception:
-        pass
+    optional_classes = {
+        "sc.fiji:TrackMate": "fiji.plugin.trackmate.TrackMate",
+        "sc.fiji:Fiji": "fiji.Main",
+    }
+    for artifact, cls in optional_classes.items():
+        try:
+            optionals[artifact] = jimport(cls)
+        except Exception:
+            pass
 
     return optionals
 
